@@ -1,0 +1,150 @@
+<html>
+<head>
+    <title></title>
+    <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
+    <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
+</head>
+<body onload="genTiles('2^x = 4');">
+<canvas width=480 height=480 id="puzzle"></canvas>
+<script type="text/javascript">
+
+genTiles = function(equation) {
+  var stepsHTML = [];
+  var data;
+
+  $.get('solve.html', function(data) {
+    getSteps(data);
+  });
+  
+  function getSteps(res) {
+    var stepsJQ = $(res).find('div.MathJax_Display');
+    console.log(stepsJQ);
+    for (var i = 0; i < stepsJQ.length; i++) {
+      stepsHTML.push($(stepsJQ[i]).prop('outerHTML'));
+    }
+    console.log(stepsHTML);
+    setBoard(stepsHTML);
+  }
+}
+
+var context = document.getElementById('puzzle').getContext('2d');
+
+/*var img = new Image();
+img.src = 'http://www.brucealderman.info/Images/dimetrodon.jpg';
+img.addEventListener('load', drawTiles, false);*/
+
+var boardSize = document.getElementById('puzzle').width;
+var tileCount = 3; //document.getElementById('scale').value;
+
+var tileSize = boardSize / tileCount;
+
+var clickLoc = new Object;
+clickLoc.x = 0;
+clickLoc.y = 0;
+
+var solved = false;
+
+var boardParts;
+//setBoard();
+
+/*document.getElementById('scale').onchange = function() {
+  tileCount = this.value;
+  tileSize = boardSize / tileCount;
+  setBoard();
+  drawTiles();
+};*/
+
+document.getElementById('puzzle').onclick = function(e) {
+  clickLoc.x = Math.floor((e.pageX - this.offsetLeft) / tileSize);
+  clickLoc.y = Math.floor((e.pageY - this.offsetTop) / tileSize);
+
+  slideTile(clickLoc.x, clickLoc.y);
+
+  if (solved) {
+    setTimeout(function() {alert("You solved it!");}, 500);
+  }
+};
+
+/* GENERATE HTML TO DRAW AS PARTS */
+function img2html(html) {
+    this.data = '<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200">' +
+               '<foreignObject width="100%" height="100%">' +
+               '<div xmlns="http://www.w3.org/1999/xhtml" style="font-size:16px">' +
+                 html +
+               '</div>' +
+               '</foreignObject>' +
+               '</svg>';
+
+    this.DOMURL = window.URL || window.webkitURL || window;
+
+    this.img = new Image();
+    this.svg = new Blob([this.data], {type: 'image/svg+xml;charset=utf-8'});
+    this.url = this.DOMURL.createObjectURL(this.svg);
+}
+
+img2html.prototype.draw = function(x,y) {
+    this.img.onload = function () {
+      context.drawImage(this.img, x, y, tileSize, tileSize);
+      //this.DOMURL.revokeObjectURL(this.url);
+    }.bind(this);
+    this.img.src = this.url;
+
+}
+
+//////////
+
+function setBoard(tileAry) {
+  boardParts = [];
+  var c = 1;
+  for (var i = 0; i < tileCount; i++) {
+    boardParts.push(new Array(tileCount));
+    for (var j = 0; j < tileCount; j++) {
+      if (c++ != tileCount * tileCount) {
+        var tileContent = '';
+        if (typeof(tileAry[c - 1]) != 'undefined')
+          tileContent = tileAry[c - 1];
+        else
+          tileContent = 'empty'
+        boardParts[i][j] = new img2html(tileContent);
+      }
+      else {
+        boardParts[i][j] = 1;
+      }
+    }
+  }
+  setTimeout(drawTiles(), 1000);
+}
+
+function drawTiles() {
+  context.clearRect(0,0,boardSize,boardSize);
+  for (var i = 0; i < tileCount; i++) {
+    for (var j = 0; j < tileCount; j++) {
+      if (boardParts[i][j] != 1)
+        boardParts[i][j].draw(i * tileSize, j * tileSize);
+    }
+  }
+}
+
+function slideTile(x, y) {
+  var toSwap, curr = boardParts[x][y], willSwap = 0;
+  if (!solved) {
+    if (boardParts[x - 1] && boardParts[x - 1][y] == 1 && ++willSwap)
+      boardParts[x - 1][y] = curr;
+    else if (boardParts[x + 1] && boardParts[x + 1][y] == 1 && ++willSwap)
+      boardParts[x + 1][y] = curr;
+    else if (boardParts[x][y - 1] == 1 && ++willSwap)
+      boardParts[x][y - 1] = curr;
+    else if (boardParts[x][y + 1] == 1 && ++willSwap)
+      boardParts[x][y + 1] = curr;
+    //boardParts[toLoc.x][toLoc.y] = boardParts[fromLoc.x][fromLoc.y];
+    //checkSolved();
+    if (willSwap) 
+      boardParts[x][y] = 1;
+    
+    drawTiles();
+  }
+}
+
+</script>
+</body>
+</html>
