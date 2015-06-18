@@ -21,9 +21,13 @@
     border-bottom: rgb(178, 152, 122) 12px solid;
     height:200px;
     width:322px;
-    position:relative;
+    position:absolute;
     text-align: center;
     margin:10px;
     display:inline-block;
 }
 
+.container {
+    width:100%;
+    height:100%;
+}

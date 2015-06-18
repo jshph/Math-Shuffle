@@ -4,10 +4,10 @@
     <link rel="stylesheet" type="text/css" href="style.css">
     <script type="text/javascript" src="http://code.jquery.com/jquery-latest.min.js"></script>
     <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
-    <script type="text/javascript" src="rasterizejs/rasterize.js"></script>
 </head>
 <body onload="genTiles('2^x = 4');">
 <canvas width=1200 height=1200 id="puzzle"></canvas>
+<div class="container"></div>
 <script type="text/javascript">
 
 genTiles = function(equation) {
@@ -41,23 +41,11 @@ var tileCount = 3; //document.getElementById('scale').value;
 var tileSizeX = 346//boardSize / tileCount;
 var tileSizeY = 224;
 
-var clickLoc = new Object;
-clickLoc.x = 0;
-clickLoc.y = 0;
-
 var solved = false;
 
 var boardParts;
-//setBoard();
 
-/*document.getElementById('scale').onchange = function() {
-  tileCount = this.value;
-  tileSize = boardSize / tileCount;
-  setBoard();
-  drawTiles();
-};*/
-
-document.getElementById('puzzle').onclick = function(e) {
+/*$('.container').click(function(e) {
   clickLoc.x = Math.floor((e.pageX - this.offsetLeft) / tileSizeX);
   clickLoc.y = Math.floor((e.pageY - this.offsetTop) / tileSizeY);
 
@@ -66,30 +54,8 @@ document.getElementById('puzzle').onclick = function(e) {
   if (solved) {
     setTimeout(function() {alert("You solved it!");}, 500);
   }
-};
+});*/
 
-
-/* GENERATE HTML TO DRAW AS PARTS */
-function img2html(html) {
-  this.renderResult;
-
-  function wrap(html) {
-    return '<div class="domino"><h2>Divide both sides.</h2>' + html + '</div>';
-  }
-
-  rasterizeHTML.drawHTML(wrap(html), context).then(function success(renderResult) {
-    this.renderResult = renderResult;
-    context.drawImage(renderResult.image, tileSizeX, tileSizeY);
-  }.bind(this),
-  function error(e) {console.log(error)});
-}
-
-img2html.prototype.draw = function(x,y) {
-    this.img.onload = function () {
-      context.drawImage(this.renderResult, x, y, tileSizeX, tileSizeY);
-      //this.DOMURL.revokeObjectURL(this.url);
-    }.bind(this);
-}
 
 //////////
 
@@ -105,7 +71,7 @@ function setBoard(tileAry) {
           tileContent = tileAry[c - 1];
         else
           tileContent = 'empty'
-        boardParts[i][j] = new img2html(tileContent);
+        boardParts[i][j] = new img2html(tileContent, i, j);
       }
       else {
         boardParts[i][j] = 1;
@@ -120,12 +86,12 @@ function drawTiles() {
   for (var i = 0; i < tileCount; i++) {
     for (var j = 0; j < tileCount; j++) {
       if (boardParts[i][j] != 1)
-        boardParts[i][j].draw(i * tileSizeX, j * tileSizeY);
+        boardParts[i][j].draw(j * tileSizeX, i * tileSizeY);
     }
   }
 }
 
-function slideTile(x, y) {
+function slideTile(y, x) {
   var toSwap, curr = boardParts[x][y], willSwap = 0;
   if (!solved) {
     if (boardParts[x - 1] && boardParts[x - 1][y] == 1 && ++willSwap)
@@ -138,11 +104,39 @@ function slideTile(x, y) {
       boardParts[x][y + 1] = curr;
     //boardParts[toLoc.x][toLoc.y] = boardParts[fromLoc.x][fromLoc.y];
     //checkSolved();
-    if (willSwap) 
+    if (willSwap)  {
       boardParts[x][y] = 1;
+    }
     
     drawTiles();
   }
+}
+
+
+
+/* GENERATE HTML TO DRAW AS PARTS */
+function img2html(mathHTML, x, y) {
+  this.$content = $('<div class="domino"><h2>Divide both sides.</h2>' + mathHTML + '</div>');
+  this.x = x, this.y = y;
+  this.init = false;
+  this.$content.click(function() {
+    var offset = this.$content.position();
+    slideTile(offset.left / tileSizeX, offset.top / tileSizeY);
+  }.bind(this));
+}
+
+img2html.prototype.draw = function(x,y) {
+  if (this.init) {
+    $('.container').remove(this.$content); 
+  }
+  else
+    this.init = false;
+
+  this.$content.css({
+    'left': x,
+    'top': y
+  })
+  $('.container').append(this.$content);
 }
 
 </script>
