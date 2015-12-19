@@ -6,15 +6,16 @@
     <script src='https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML'></script>
 </head>
 <body onload="genTiles('2^x = 4');">
-<canvas width=1200 height=1200 id="puzzle"></canvas>
+  <h1>math shuffle</h1>
 <div class="container"></div>
 <script type="text/javascript">
 
+$(document).ready(function(){
 genTiles = function(equation) {
   var stepsHTML = [];
   var data;
 
-  $.get('solve.html', function(data) {
+  $.get('solve2.html', function(data) {
     getSteps(data);
   });
   
@@ -22,24 +23,25 @@ genTiles = function(equation) {
     var stepsJQ = $(res).find('div.MathJax_Display');
     console.log(stepsJQ);
     for (var i = 0; i < stepsJQ.length; i++) {
-      stepsHTML.push($(stepsJQ[i]).prop('outerHTML'));
+      stepsHTML.push({
+        'math': $(stepsJQ[i]).prop('outerHTML'),
+        'instr': $(stepsJQ[i]).prev().prev().clone().children().remove().end().text()
+        });
     }
-    console.log(stepsHTML);
+    //console.log(stepsHTML);
     setBoard(stepsHTML);
   }
 }
 
-var context = document.getElementById('puzzle').getContext('2d');
+var tileCount = 3;
 
-/*var img = new Image();
-img.src = 'http://www.brucealderman.info/Images/dimetrodon.jpg';
-img.addEventListener('load', drawTiles, false);*/
+var tileSizeX = 278;
+var tileSizeY = 180;
 
-var boardSize = document.getElementById('puzzle').width;
-var tileCount = 3; //document.getElementById('scale').value;
-
-var tileSizeX = 346//boardSize / tileCount;
-var tileSizeY = 224;
+$('.container').css({
+  'width': tileSizeX * 3,
+  'height': tileSizeY * 3
+})
 
 var solved = false;
 
@@ -82,7 +84,6 @@ function setBoard(tileAry) {
 }
 
 function drawTiles() {
-  context.clearRect(0,0,boardSize,boardSize);
   for (var i = 0; i < tileCount; i++) {
     for (var j = 0; j < tileCount; j++) {
       if (boardParts[i][j] != 1)
@@ -116,7 +117,8 @@ function slideTile(y, x) {
 
 /* GENERATE HTML TO DRAW AS PARTS */
 function img2html(mathHTML, x, y) {
-  this.$content = $('<div class="domino"><h2>Divide both sides.</h2>' + mathHTML + '</div>');
+  console.log(mathHTML);
+  this.$content = $('<div class="domino"><h2>' + mathHTML.instr + '</h2>' + mathHTML.math + '</div>');
   this.x = x, this.y = y;
   this.init = false;
   this.$content.click(function() {
@@ -138,6 +140,8 @@ img2html.prototype.draw = function(x,y) {
   })
   $('.container').append(this.$content);
 }
+
+});
 
 </script>
 </body>
